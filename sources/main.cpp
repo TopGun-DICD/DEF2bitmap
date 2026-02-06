@@ -10,17 +10,17 @@ int main(int argc, char *argv[]) {
     DEFConverter    converter;
 
     /* // Majority of 5
-    std::string     defFile = "bin/tests/majorityof5/majorityof5.def";
+    std::string     defFile = "tests/majorityof5/majorityof5.def";
     std::string     txtFile = "result_majorityof5.txt";
     //*/
     
     //* // Counter
-    std::string defFile = "bin/tests/counter/counter.def";
+    std::string defFile = "tests/counter/counter.def";
     std::string txtFile = "result_counter.txt";
     //*/
 
     /* // SPM
-    std::string     defFile = "bin/tests/spm/spm.def";
+    std::string     defFile = "tests/spm/spm.def";
     std::string     txtFile = "result_spm.txt";
     //*/
 
