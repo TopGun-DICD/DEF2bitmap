@@ -15,12 +15,12 @@ int main(int argc, char *argv[]) {
     //*/
     
     //* // Counter
-    std::string     defFile = "tests/counter/counter.def";
     std::string     txtFile = "result_counter.txt";
+    std::string defFile = "bin/tests/counter/counter.def";
     //*/
 
     /* // SPM
-    std::string     defFile = "tests/spm/spm.def";
+    std::string     defFile = "bin/tests/spm/spm.def";
     std::string     txtFile = "result_spm.txt";
     //*/
 
