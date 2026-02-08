@@ -1,45 +1,59 @@
 #include "DEFConverter.hpp"
 
 #include <iostream>
+#include <chrono>
 
 //https://github.com/baderouaich/BitmapPlusPlus
 #include "BitmapPlusPlus.hpp"
 
-bool DEFConverter::writeTo(const std::string &_fileName, DEF &_def, uint8_t _atLayer) {
-    file.open(_fileName, std::ios::out);
-    if (!file.is_open())
-        return false;
+bool DEFConverter::writeTo(DEF &_def, ConverterOptions &_options) {
+    std::cout << "Starting DEF data conversion..." << std::endl;
 
-    def = &_def;
+    options = &_options;
+    def     = &_def;
+    
+    auto start1 = std::chrono::steady_clock::now();
 
-    //findGCDs(_atLayer);
-
+    std::cout << "  Initializing the bit matrix" << std::endl;
     initMatrix();
 
-    bmp::Bitmap image(cols, rows);
-
-    image.clear(bmp::Pixel(255, 255, 255));
-    for (int row = 0; row < rows; ++row) {
-        for (int col = 0; col < cols; ++col) {
-            if(matrix[col][rows - row - 1] == 1)
-                image.set(col, row, bmp::Black);
+    if (options->writeBitmap && !options->bmpFileName.empty()) {
+        std::cout << "  Dumping nets to the output bitmap file" << std::endl;
+        bmp::Bitmap image(cols, rows);
+        image.clear(bmp::Pixel(255, 255, 255));
+        for (uint32_t row = 0; row < rows; ++row) {
+            for (uint32_t col = 0; col < cols; ++col) {
+                if (matrix[col][rows - row - 1] == 1)
+                    image.set(col, row, bmp::Black);
+            }
         }
+        image.save(options->bmpFileName);
+        std::cout << "  Done!" << std::endl;
     }
-    image.save("result.bmp");
 
-    //*
-    file << "ROWS " << rows << " COLS " << cols << "\n";
-    for (int row = 0; row < rows; ++row) {
-        for (int col = 0; col < cols; ++col) {
-            file << (int)matrix[col][rows-row-1]; // << ' ';
+    if (options->writeText && !options->txtFileName.empty()) {
+        std::cout << "  Dumping nets to the output text file" << std::endl;
+        file.open(options->txtFileName, std::ios::out);
+        if (!file.is_open())
+            return false;
+        //*
+        file << "ROWS " << rows << " COLS " << cols << "\n";
+        for (uint32_t row = 0; row < rows; ++row) {
+            for (uint32_t col = 0; col < cols; ++col) {
+                file << (int)matrix[col][rows - row - 1]; // << ' ';
+            }
+            file << "\n";
         }
-        file << "\n";
+        file.close();
+        //*/
+        std::cout << "  Done!" << std::endl;
     }
-    file.close();
-    //*/
 
+    std::cout << "  Deinitializing the bit matrix" << std::endl;
     uninitMatrix();
+    std::cout << "  Done!" << std::endl;
 
+    std::cout << "DEF data conversion has finished." << std::endl;
     return true;
 }
 
@@ -54,6 +68,7 @@ uint32_t greatest_common_divisor(uint32_t _a, uint32_t _b) {
     return greatest_common_divisor(_a, _b % _a);
 }
 
+/*
 void DEFConverter::findGCDs(uint8_t _layer) {
     const std::vector<Net *> nets = def->getNets();
 
@@ -66,10 +81,8 @@ void DEFConverter::findGCDs(uint8_t _layer) {
     for (int i = 0; i < nets.size(); ++i) {
         const std::vector<Leg *> legs = nets[i]->getLegs();
         for (int j = 0; j < legs.size(); ++j) {
-            //*
             if (_layer && legs[j]->layer != _layer)
                 continue;
-            //*/
             uint32_t b = legs[j]->a.x;
             gcd = greatest_common_divisor(a, b);
             if (gcd < gcdX)
@@ -83,10 +96,8 @@ void DEFConverter::findGCDs(uint8_t _layer) {
     for (int i = 0; i < nets.size(); ++i) {
         const std::vector<Leg*> legs = nets[i]->getLegs();
         for (int j = 0; j < legs.size(); ++j) {
-            //*
             if (_layer && legs[j]->layer != _layer)
                 continue;
-            //*/
             uint32_t b = legs[j]->a.y;
             gcd = greatest_common_divisor(a, b);
             if (gcd < gcdY)
@@ -94,25 +105,33 @@ void DEFConverter::findGCDs(uint8_t _layer) {
         }
     }
 }
+//*/
 
-void DEFConverter::initMatrix(uint8_t _layer) {
+void DEFConverter::initMatrix() {
     rows = (def->getArea().rt.y - def->getArea().lb.y) / gcdY;
     cols = (def->getArea().rt.x - def->getArea().lb.x) / gcdX;
 
     matrix = new uint8_t *[cols];
-    for (int col = 0; col < cols; ++col) {
+    for (uint32_t col = 0; col < cols; ++col) {
         matrix[col] = new uint8_t[rows];
-        for (int row = 0; row < rows; ++row)
+        for (uint32_t row = 0; row < rows; ++row)
             matrix[col][row] = 0;
     }
 
 
     const std::vector<Net*> nets = def->getNets();
 
-    for (int i = 0; i < nets.size(); ++i) {
+    for (size_t i = 0; i < nets.size(); ++i) {
         const std::vector<Leg*> legs = nets[i]->getLegs();
-        for (int j = 0; j < legs.size(); ++j) {
-            if (_layer && legs[j]->layer != _layer)
+        for (size_t j = 0; j < legs.size(); ++j) {
+            bool layerIsAllowed = false;
+            for (auto layer : options->layersToWorkWith) {
+                if (legs[j]->layer != layer)
+                    continue;
+                layerIsAllowed = true;
+                break;
+            }
+            if (!layerIsAllowed)
                 continue;
             //*
             if (legs[j]->a.x == legs[j]->b.x) {
@@ -120,13 +139,13 @@ void DEFConverter::initMatrix(uint8_t _layer) {
                 if (legs[j]->a.y < legs[j]->b.y) {
                     uint32_t runFrom    = legs[j]->a.y / gcdY;
                     uint32_t runTo      = legs[j]->b.y / gcdY;
-                    for (int k = runFrom; k <= runTo; ++k)
+                    for (uint32_t k = runFrom; k <= runTo; ++k)
                         matrix[constX][k] = 1;
                 }
                 if (legs[j]->a.y > legs[j]->b.y) {
                     uint32_t runFrom    = legs[j]->b.y / gcdY;
                     uint32_t runTo      = legs[j]->a.y / gcdY;
-                    for (int k = runFrom; k <= runTo; ++k)
+                    for (uint32_t k = runFrom; k <= runTo; ++k)
                         matrix[constX][k] = 1;
                 }
                 continue;
@@ -138,13 +157,13 @@ void DEFConverter::initMatrix(uint8_t _layer) {
                 if (legs[j]->a.x < legs[j]->b.x) {
                     uint32_t runFrom = legs[j]->a.x / gcdX;
                     uint32_t runTo = legs[j]->b.x / gcdX;
-                    for (int k = runFrom; k <= runTo; ++k)
+                    for (uint32_t k = runFrom; k <= runTo; ++k)
                         matrix[k][constY] = 1;
                 }
                 if (legs[j]->a.x > legs[j]->b.x) {
                     uint32_t runFrom = legs[j]->b.x / gcdX;
                     uint32_t runTo = legs[j]->a.x / gcdX;
-                    for (int k = runFrom; k <= runTo; ++k)
+                    for (uint32_t k = runFrom; k <= runTo; ++k)
                         matrix[k][constY] = 1;
                 }
                 continue;
@@ -160,7 +179,7 @@ void DEFConverter::uninitMatrix() {
     if (!matrix)
         return;
 
-    for (int col = 0; col < cols; ++col)
+    for (uint32_t col = 0; col < cols; ++col)
         delete [] matrix[col];
 
     delete [] matrix;

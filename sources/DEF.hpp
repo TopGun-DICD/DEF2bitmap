@@ -5,8 +5,8 @@
 #include <vector>
 
 struct Point {
-    uint32_t    x   = -1, 
-                y   = -1;
+    uint32_t    x   = 0, 
+                y   = 0;
 };
 
 struct Rect {
@@ -21,16 +21,26 @@ struct  Component {
 };
 
 struct Leg {
-    uint8_t     layer   = -1;
+    uint8_t     layer   = 0;
     Point       a,
                 b;
 };
 
+struct NetPin {
+    std::string cellName;
+    std::string pinName;
+    Point       pinCoord;
+};
+
 class Net {
-    std::string         name;
-    std::vector<Leg *>  legs;
+    std::string             name;
+    std::vector<Leg *>      legs;
+    std::vector<NetPin *>   pins;
 public:
    ~Net() {
+        for (NetPin *pin : pins)
+            delete pin;
+        pins.clear();
         for (Leg *leg : legs)
             delete leg;
         legs.clear();
@@ -46,8 +56,15 @@ public:
         legs.push_back(new Leg{_layer, _a, _b});
         return legs.back();
     }
+    NetPin* addPin(std::string &_cell, std::string &_port) {
+        pins.push_back(new NetPin{ _cell, _port });
+        return pins.back();
+    }
     const std::vector<Leg *>& getLegs() const {
         return legs;
+    }
+    std::vector<NetPin *>& getPins() {
+        return pins;
     }
 };
 

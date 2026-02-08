@@ -17,4 +17,5 @@ private:
     bool readPins();
     bool readSpecialNets();
     bool readNets();
+    bool resolveNetPinCoords();
 };

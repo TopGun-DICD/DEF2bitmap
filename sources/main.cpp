@@ -10,24 +10,42 @@ int main(int argc, char *argv[]) {
     DEFConverter    converter;
 
     /* // Majority of 5
-    std::string     defFile = "tests/majorityof5/majorityof5.def";
-    std::string     txtFile = "result_majorityof5.txt";
+    ConverterOptions options;
+    options.bmpFileName         = "majorityof5.bmp";
+    options.txtFileName         = "majorityof5.txt";
+    options.writeText           = false;
+    options.writeBitmap         = true;
+    options.excludeNets         = {};
+    options.layersToWorkWith    = {1, 2, 3, 4, 5};
+    std::string defFile         = "tests/majorityof5/majorityof5.def";
     //*/
     
     //* // Counter
-    std::string defFile = "tests/counter/counter.def";
-    std::string txtFile = "result_counter.txt";
+    ConverterOptions options;
+    options.bmpFileName         = "counter.bmp";
+    options.txtFileName         = "counter.txt";
+    options.writeText           = false;
+    options.writeBitmap         = true;
+    options.excludeNets         = {};
+    options.layersToWorkWith    = {1, 2, 3};
+    std::string defFile         = "tests/counter/counter.def";
     //*/
 
     /* // SPM
-    std::string     defFile = "tests/spm/spm.def";
-    std::string     txtFile = "result_spm.txt";
+    ConverterOptions options;
+    options.bmpFileName         = "spm.bmp";
+    options.txtFileName         = "spm.txt";
+    options.writeText           = false;
+    options.writeBitmap         = true;
+    options.excludeNets         = {};
+    options.layersToWorkWith    = {1, 2, 3, 4};
+    std::string defFile         = "tests/spm/spm.def";
     //*/
 
 
     if (!readerDEF.read(defFile, def))
         return EXIT_FAILURE;
-    if (!converter.writeTo(txtFile, def, 1))
+    if (!converter.writeTo(def, options))
         return EXIT_FAILURE;
     return EXIT_SUCCESS;
 }
