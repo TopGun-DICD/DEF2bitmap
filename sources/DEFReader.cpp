@@ -65,17 +65,24 @@ bool DEFReader::read(const std::string &_fileName, DEF &_def) {
     }
     file.close();
     auto stop1 = std::chrono::steady_clock::now();
-    auto duration1mins  = std::chrono::duration_cast<std::chrono::minutes>(stop1 - start1);
-    auto duration1secs  = std::chrono::duration_cast<std::chrono::seconds>(stop1 - start1);
-    auto duration1msecs = std::chrono::duration_cast<std::chrono::milliseconds>(stop1 - start1);
-
-    std::cout   << "  Reading file contents done in " 
-                << duration1mins.count() << " mins " 
-                << duration1secs.count() << " secs"
-                << duration1msecs.count() << " millis" << std::endl;
-
+    {
+        int64_t mins    = 0,
+                secs    = 0,
+                msecs   = std::chrono::duration_cast<std::chrono::milliseconds>(stop1 - start1).count();
+        if (msecs > 1000) {
+            secs = msecs / 1000;
+            msecs = msecs % 1000;
+        }
+        if (secs > 60) {
+            mins = secs / 60;
+            secs = secs % 60;
+        }
+        std::cout   << "  Reading file contents done in " 
+                    << mins << " mins " 
+                    << secs << " secs "
+                    << msecs << " millis" << std::endl;
+    }
     auto start2 = std::chrono::steady_clock::now();
-
 
     std::cout << "  Resolving pin coords...\n";
 
@@ -84,23 +91,43 @@ bool DEFReader::read(const std::string &_fileName, DEF &_def) {
         return false;
 
     auto stop2 = std::chrono::steady_clock::now();
-    auto duration2mins = std::chrono::duration_cast<std::chrono::minutes>(stop2 - start2);
-    auto duration2secs = std::chrono::duration_cast<std::chrono::seconds>(stop2 - start2);
-    auto duration2msecs = std::chrono::duration_cast<std::chrono::milliseconds>(stop2 - start2);
+    auto timePoint2 = stop2 - start2;
+    {
+        int64_t mins    = 0,
+                secs    = 0,
+                msecs   = std::chrono::duration_cast<std::chrono::milliseconds>(stop2 - start2).count();
+        if (msecs > 1000) {
+            secs = msecs / 1000;
+            msecs = msecs % 1000;
+        }
+        if (secs > 60) {
+            mins = secs / 60;
+            secs = secs % 60;
+        }
+        std::cout   << "  Resolving pin coords done in "
+                    << mins << " mins "
+                    << secs << " secs "
+                    << msecs << " millis" << std::endl;
+    }
+    {
+        int64_t mins    = 0,
+                secs    = 0,
+                msecs   = std::chrono::duration_cast<std::chrono::milliseconds>((stop2 - start2) + (stop1 - start1)).count();
+        if (msecs > 1000) {
+            secs = msecs / 1000;
+            msecs = msecs % 1000;
+        }
+        if (secs > 60) {
+            mins = secs / 60;
+            secs = secs % 60;
+        }
+        std::cout   << "Parsing of the input has completed in "
+                    << mins << " mins "
+                    << secs << " secs "
+                    << msecs << " millis" << std::endl;
+    }
+    std::cout << std::endl;
 
-    std::cout   << "  Resolving pin coords done in "
-                << duration1mins.count() << " mins "
-                << duration1secs.count() << " secs "
-                << duration1msecs.count() << " millis" << std::endl;
-
-    auto duration3mins = std::chrono::duration_cast<std::chrono::minutes>(stop2 - start1);
-    auto duration3secs = std::chrono::duration_cast<std::chrono::seconds>(stop2 - start1);
-    auto duration3msecs = std::chrono::duration_cast<std::chrono::milliseconds>(stop2 - start1);
-
-    std::cout   << "Parsing of the input completed in "
-                << duration1mins.count() << " mins "
-                << duration1secs.count() << " secs "
-                << duration1msecs.count() << " millis" << std::endl;
     return true;
 }
 

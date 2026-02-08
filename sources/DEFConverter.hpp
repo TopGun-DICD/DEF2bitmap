@@ -11,6 +11,7 @@ struct ConverterOptions {
     bool                        writeText       = true, //< Нужно генерировать текст?
                                 writeBitmap     = true; //< Нужно генерировать картинку?
     std::vector<std::string>    excludeNets;            //< Вектор цепей, которые нужно исключить из записи
+    std::vector<std::string>    netsToTellPinCoords;    //< Вектор цепей, для которых нужно сообщить координаты контактов для трассировки
     std::vector<uint8_t>        layersToWorkWith;       //< Печень слоёв, на которых происходит обарботка
 };
 

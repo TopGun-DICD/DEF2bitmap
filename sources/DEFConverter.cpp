@@ -14,9 +14,29 @@ bool DEFConverter::writeTo(DEF &_def, ConverterOptions &_options) {
     
     auto start1 = std::chrono::steady_clock::now();
 
-    std::cout << "  Initializing the bit matrix" << std::endl;
+    std::cout << "  Initializing a bit matrix" << std::endl;
     initMatrix();
+    auto stop1 = std::chrono::steady_clock::now();
+    {
+        int64_t mins    = 0,
+                secs    = 0,
+                msecs   = std::chrono::duration_cast<std::chrono::milliseconds>(stop1 - start1).count();
+        if (msecs > 1000) {
+            secs = msecs / 1000;
+            msecs = msecs % 1000;
+        }
+        if (secs > 60) {
+            mins = secs / 60;
+            secs = secs % 60;
+        }
 
+        std::cout   << "  Bitmap dump to the file done in "
+                    << mins << " mins "
+                    << secs << " secs "
+                    << msecs << " millis" << std::endl;
+    }
+
+    auto start2 = std::chrono::steady_clock::now();
     if (options->writeBitmap && !options->bmpFileName.empty()) {
         std::cout << "  Dumping nets to the output bitmap file" << std::endl;
         bmp::Bitmap image(cols, rows);
@@ -30,7 +50,28 @@ bool DEFConverter::writeTo(DEF &_def, ConverterOptions &_options) {
         image.save(options->bmpFileName);
         std::cout << "  Done!" << std::endl;
     }
+    auto stop2 = std::chrono::steady_clock::now();
+    if (options->writeBitmap && !options->bmpFileName.empty()) {
+        {
+            int64_t mins    = 0,
+                    secs    = 0,
+                    msecs   = std::chrono::duration_cast<std::chrono::milliseconds>(stop2 - start2).count();
+            if (msecs > 1000) {
+                secs = msecs / 1000;
+                msecs = msecs % 1000;
+            }
+            if (secs > 60) {
+                mins = secs / 60;
+                secs = secs % 60;
+            }
+            std::cout   << "  Bitmap dump to the file done in "
+                        << mins << " mins "
+                        << secs << " secs "
+                        << msecs << " millis" << std::endl;
+        }
+    }
 
+    auto start3 = std::chrono::steady_clock::now();
     if (options->writeText && !options->txtFileName.empty()) {
         std::cout << "  Dumping nets to the output text file" << std::endl;
         file.open(options->txtFileName, std::ios::out);
@@ -48,12 +89,61 @@ bool DEFConverter::writeTo(DEF &_def, ConverterOptions &_options) {
         //*/
         std::cout << "  Done!" << std::endl;
     }
+    auto stop3 = std::chrono::steady_clock::now();
+    if (options->writeText && !options->txtFileName.empty()) {
+        {
+            int64_t mins    = 0,
+                    secs    = 0,
+                    msecs   = std::chrono::duration_cast<std::chrono::milliseconds>(stop3 - start3).count();
+            if (msecs > 1000) {
+                secs = msecs / 1000;
+                msecs = msecs % 1000;
+            }
+            if (secs > 60) {
+                mins = secs / 60;
+                secs = secs % 60;
+            }
+            std::cout   << "  Nets dump to the file done in "
+                        << mins << " mins "
+                        << secs << " secs "
+                        << msecs << " millis" << std::endl;
+        }
+    }
 
     std::cout << "  Deinitializing the bit matrix" << std::endl;
     uninitMatrix();
     std::cout << "  Done!" << std::endl;
 
-    std::cout << "DEF data conversion has finished." << std::endl;
+    {
+        int64_t mins    = 0,
+                secs    = 0,
+                msecs   = std::chrono::duration_cast<std::chrono::milliseconds>((stop3 - start3) + (stop2 - start2) + (stop1 - start1)).count();
+        if (msecs > 1000) {
+            secs = msecs / 1000;
+            msecs = msecs % 1000;
+        }
+        if (secs > 60) {
+            mins = secs / 60;
+            secs = secs % 60;
+        }
+        std::cout   << "DEF data conversion has completed in "
+                    << mins << " mins "
+                    << secs << " secs "
+                    << msecs << " millis" << std::endl;
+    }
+
+    for (Net *net : def->getNets()) {
+        for (auto netName : options->netsToTellPinCoords) {
+            if (net->getName() != netName)
+                continue;
+            std::cout << "Pin information for net " << netName << ":\n";
+            for (NetPin *pin : net->getPins()) {
+                std::cout   << " ( " << pin->pinCoord.x / gcdX << " " << pin->pinCoord.y / gcdY << " ) : " 
+                            << pin->cellName << "." << pin->pinName << "\n";
+            }
+        }
+    }
+
     return true;
 }
 
@@ -118,10 +208,20 @@ void DEFConverter::initMatrix() {
             matrix[col][row] = 0;
     }
 
-
     const std::vector<Net*> nets = def->getNets();
 
     for (size_t i = 0; i < nets.size(); ++i) {
+
+        bool netIsAllowed = true;
+        for (auto net : options->excludeNets) {
+            if (nets[i]->getName() != net)
+                continue;
+            netIsAllowed = false;
+            break;
+        }
+        if (!netIsAllowed)
+            continue;
+
         const std::vector<Leg*> legs = nets[i]->getLegs();
         for (size_t j = 0; j < legs.size(); ++j) {
             bool layerIsAllowed = false;

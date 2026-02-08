@@ -16,6 +16,7 @@ int main(int argc, char *argv[]) {
     options.writeText           = false;
     options.writeBitmap         = true;
     options.excludeNets         = {};
+    options.netsToTellPinCoords = {};
     options.layersToWorkWith    = {1, 2, 3, 4, 5};
     std::string defFile         = "tests/majorityof5/majorityof5.def";
     //*/
@@ -26,7 +27,8 @@ int main(int argc, char *argv[]) {
     options.txtFileName         = "counter.txt";
     options.writeText           = false;
     options.writeBitmap         = true;
-    options.excludeNets         = {};
+    options.excludeNets         = { "net13", "net5" };
+    options.netsToTellPinCoords = { "net5" };
     options.layersToWorkWith    = {1, 2, 3};
     std::string defFile         = "tests/counter/counter.def";
     //*/
@@ -38,10 +40,10 @@ int main(int argc, char *argv[]) {
     options.writeText           = false;
     options.writeBitmap         = true;
     options.excludeNets         = {};
+    options.netsToTellPinCoords = {};
     options.layersToWorkWith    = {1, 2, 3, 4};
     std::string defFile         = "tests/spm/spm.def";
     //*/
-
 
     if (!readerDEF.read(defFile, def))
         return EXIT_FAILURE;
